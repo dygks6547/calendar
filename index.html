@@ -13,7 +13,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 <header class="top">
@@ -54,7 +54,7 @@
     </div>
     <label class="who-hint" for="dayMemo">메모 내용</label>
     <textarea id="dayMemo" rows="2" maxlength="200" aria-label="메모"></textarea>
-    <label class="check"><input type="checkbox" id="dayMeet" aria-label="만나는 날"> <span class="heart">❤️</span></label>
+    <label class="check"><input type="checkbox" id="dayMeet" aria-label="만나는 날"> <span class="heart" aria-hidden="true"></span></label>
     <label class="check"><input type="checkbox" id="dayHolChk"> 공휴일로 지정 (임시공휴일 등)</label>
     <input type="text" id="dayHolName" class="text" placeholder="공휴일 이름" maxlength="20" hidden>
     <div class="row2">
@@ -143,7 +143,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="holidays.js?v=14"></script>
-<script src="app.js?v=14"></script>
+<script src="holidays.js?v=15"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

@@ -507,7 +507,10 @@ async function renderImage() {
     // 상단 줄: 날짜 + [아이콘+약자] (근무 색은 이 부분에만)
     const isToday = c.s === today && !c.other;
     if (isToday) { ctx.fillStyle = C.today; roundRect(ctx, cx + 5, cy + 7, 44, 34, 17); ctx.fill(); }
-    if (i.meet) { ctx.font = `44px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText('❤️', cx + 27, cy + 26); }
+    if (i.meet) { // 광택 없는 단색 하트
+      const hs = 38; ctx.save(); ctx.translate(cx + 27 - hs / 2, cy + 26 - hs / 2); ctx.scale(hs / 24, hs / 24);
+      ctx.fillStyle = '#E8283C'; ctx.fill(new Path2D('M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z')); ctx.restore();
+    }
     ctx.fillStyle = (i.meet ? '#ffffff' : isToday ? C.bg : (i.red ? C.red : C.fg));
     const TS = 26; // 날짜·아이콘·근무 글자 같은 크기
     ctx.font = `700 ${TS}px ${FONT}`; ctx.textAlign = 'center';

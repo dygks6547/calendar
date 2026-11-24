@@ -197,8 +197,9 @@ function render() {
 const WHO = { M: '👨', F: '👩' };
 function memoLines(i) {
   const out = [];
-  if (i.memoM) out.push({ who: WHO.M, text: i.memoM });
-  if (i.memoF) out.push({ who: WHO.F, text: i.memoF });
+  // 남자/여자 메모는 줄마다 이모지를 붙여 공통 메모와 헷갈리지 않게
+  if (i.memoM) i.memoM.split('\n').filter(t => t.trim()).forEach(t => out.push({ who: WHO.M, text: t }));
+  if (i.memoF) i.memoF.split('\n').filter(t => t.trim()).forEach(t => out.push({ who: WHO.F, text: t }));
   if (i.memo) out.push({ who: '', text: i.memo });
   return out;
 }
@@ -382,6 +383,70 @@ $('patSave').addEventListener('click', () => {
   }
   save(); render(); closeSheet($('patSave'));
   toast('패턴을 적용했습니다');
+});
+
+/* ───────── 일정 한번에 추가 ───────── */
+let bulkWho = '';
+function bulkRange() {
+  const a = $('bulkFrom').value, b = $('bulkTo').value;
+  if (!a || !b) return null;
+  return dayNum(a) <= dayNum(b) ? [a, b] : [b, a];
+}
+function renderBulk() {
+  document.querySelectorAll('#bulkWho button').forEach(b => {
+    b.classList.toggle('sel', bulkWho === b.dataset.who);
+    b.setAttribute('aria-pressed', bulkWho === b.dataset.who ? 'true' : 'false');
+  });
+  const r = bulkRange();
+  if (!r) { $('bulkDays').textContent = ''; return; }
+  const n = dayNum(r[1]) - dayNum(r[0]) + 1;
+  const f = s => `${parts(s)[1]}/${parts(s)[2]}`;
+  $('bulkDays').textContent = n === 1 ? `${f(r[0])} 하루` : `${f(r[0])} ~ ${f(r[1])} · ${n}일`;
+}
+function openBulk() {
+  const t = todayStr();
+  const start = (view.y === new Date().getFullYear() && view.m === new Date().getMonth()) ? t : ymd(view.y, view.m, 1);
+  $('bulkFrom').value = start; $('bulkTo').value = start;
+  $('bulkMemo').value = ''; $('bulkMeet').checked = false; bulkWho = '';
+  renderBulk(); openSheet('bulkSheet');
+}
+$('bulkFrom').addEventListener('change', () => {
+  // 시작일을 종료일보다 뒤로 옮기면 종료일도 맞춰 준다
+  if ($('bulkTo').value && dayNum($('bulkFrom').value) > dayNum($('bulkTo').value)) $('bulkTo').value = $('bulkFrom').value;
+  renderBulk();
+});
+$('bulkTo').addEventListener('change', renderBulk);
+// 👨/👩: 메모 입력 중에 눌러도 키보드 유지
+$('bulkWho').addEventListener('touchend', e => {
+  const b = e.target.closest('[data-who]'); if (!b) return;
+  e.preventDefault(); bulkWho = bulkWho === b.dataset.who ? '' : b.dataset.who; renderBulk();
+}, { passive: false });
+$('bulkWho').addEventListener('mousedown', e => { if (e.target.closest('[data-who]')) e.preventDefault(); });
+$('bulkWho').addEventListener('click', e => {
+  const b = e.target.closest('[data-who]'); if (!b) return;
+  bulkWho = bulkWho === b.dataset.who ? '' : b.dataset.who; renderBulk();
+});
+$('bulkSave').addEventListener('click', () => {
+  const r = bulkRange();
+  if (!r) return toast('시작일과 종료일을 고르세요');
+  const n = dayNum(r[1]) - dayNum(r[0]) + 1;
+  if (n > 366) return toast('한 번에 366일까지 넣을 수 있습니다');
+  const memo = $('bulkMemo').value.trim();
+  const meet = $('bulkMeet').checked;
+  if (!memo && !meet) return toast('메모를 쓰거나 ❤️를 체크하세요');
+  const field = bulkWho === 'M' ? 'memoM' : bulkWho === 'F' ? 'memoF' : 'memo';
+  const [y, m, d] = parts(r[0]);
+  for (let k = 0; k < n; k++) {
+    const s = ymd(y, m - 1, d + k);
+    const rec = state.days[s] || {};
+    if (memo) rec[field] = rec[field] ? `${rec[field]}\n${memo}` : memo;
+    if (meet) rec.meet = true;
+    state.days[s] = rec;
+  }
+  save();
+  view = { y, m: m - 1 };
+  render(); closeSheet($('bulkSave'));
+  toast(`${n}일에 추가했습니다`);
 });
 
 /* ───────── 설정 ───────── */
@@ -607,6 +672,7 @@ $('today').addEventListener('click', () => { const t = new Date(); view = { y: t
 $('grid').addEventListener('click', e => { const c = e.target.closest('[data-date]'); if (c) openDay(c.dataset.date); });
 $('openPattern').addEventListener('click', () => { $('setSheet').hidden = true; openPattern(); });
 $('btnSettings').addEventListener('click', openSettings);
+$('btnBulk').addEventListener('click', openBulk);
 
 // 좌우 스와이프로 월 이동
 let touch = null;

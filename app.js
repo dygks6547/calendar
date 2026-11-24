@@ -25,12 +25,12 @@ const DOW = ['일', '월', '화', '수', '목', '금', '토'];
 /* ───────── 저장소 ───────── */
 function defaultState() {
   return {
-    v: 1,
+    v: 2,
     // 2026-11-30 주간 → 12/1 야간 → 12/2 비번 → 12/3 일근 → 12/4 주간 ...
     pattern: { sequence: ['D', 'N', 'O', 'W'], startDate: '2026-11-30', startIndex: 0 },
     colors: { ...DEFAULT_COLORS },
     days: {},          // 'YYYY-MM-DD': { shift?, memo?, holiday? }
-    theme: 'system',
+    theme: 'dark',
   };
 }
 function loadState() {
@@ -45,8 +45,11 @@ function normalize(s) {
   if (!s || typeof s !== 'object') return d;
   const p = s.pattern || {};
   const seq = Array.isArray(p.sequence) ? p.sequence.filter(k => PATTERN_KEYS.includes(k)) : d.pattern.sequence;
+  // v1 → v2: 다크 모드를 기본값으로
+  let theme = ['system', 'light', 'dark'].includes(s.theme) ? s.theme : 'dark';
+  if ((s.v || 1) < 2 && theme === 'system') theme = 'dark';
   return {
-    v: 1,
+    v: 2,
     pattern: {
       sequence: seq,
       startDate: /^\d{4}-\d{2}-\d{2}$/.test(p.startDate) ? p.startDate : d.pattern.startDate,
@@ -54,7 +57,7 @@ function normalize(s) {
     },
     colors: { ...DEFAULT_COLORS, ...(s.colors || {}) },
     days: s.days && typeof s.days === 'object' ? s.days : {},
-    theme: ['system', 'light', 'dark'].includes(s.theme) ? s.theme : 'system',
+    theme,
   };
 }
 function save() {
@@ -160,17 +163,16 @@ function render() {
   grid.innerHTML = cells.map(c => {
     const i = info(c.s);
     const cls = ['cell', c.other && 'other', i.red && 'red', c.s === today && 'today'].filter(Boolean).join(' ');
-    const fg = textOn(i.color);
     const t = i.shift ? TYPES[i.shift] : null;
-    const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.memo ? ' 메모 있음' : ''}`;
-    // 메모는 근무 표시 바로 아래, 공휴일 이름은 맨 아래 한 줄
-    const memoHtml = (i.memo ? `<div class="memo">${esc(i.memo)}</div>` : '') +
+    const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.memo ? ' 메모 ' + i.memo : ''}`;
+    const tag = t
+      ? `<span class="tag${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${textOn(i.color)}">${iconSvg(t.icon)}<span class="s">${t.short}</span></span>`
+      : '';
+    // 메모는 상단 줄 바로 아래, 공휴일 이름은 맨 아래 한 줄
+    const body = (i.memo ? `<div class="memo">${esc(i.memo)}</div>` : '') +
       (i.hol ? `<div class="hol">${esc(shortHol(i.hol))}</div>` : '');
-    const blk = t
-      ? `<div class="blk${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${fg}"><div class="tag">${iconSvg(t.icon)}<span class="s">${t.short}</span></div>${memoHtml}</div>`
-      : `<div class="blk empty">${memoHtml}</div>`;
     return `<button class="${cls}" data-date="${c.s}" aria-label="${esc(label)}">
-      <div class="num"><span class="n">${c.d}</span></div>${blk}</button>`;
+      <div class="top"><span class="n">${c.d}</span>${tag}</div><div class="body">${body}</div></button>`;
   }).join('');
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
@@ -425,46 +427,38 @@ async function renderImage() {
     const i = info(c.s);
     ctx.globalAlpha = c.other ? 0.35 : 1;
     ctx.fillStyle = C.surface; roundRect(ctx, cx, cy, colW, cellH, 16); ctx.fill();
-    // 날짜
+    // 상단 줄: 날짜 + [아이콘+약자] (근무 색은 이 부분에만)
     const isToday = c.s === today && !c.other;
-    if (isToday) {
-      ctx.fillStyle = C.today; roundRect(ctx, cx + 6, cy + 6, 50, 34, 17); ctx.fill();
-    }
+    if (isToday) { ctx.fillStyle = C.today; roundRect(ctx, cx + 5, cy + 7, 44, 34, 17); ctx.fill(); }
     ctx.fillStyle = isToday ? C.bg : (i.red ? C.red : C.fg);
-    ctx.font = `600 28px ${FONT}`; ctx.textAlign = 'center';
-    ctx.fillText(String(c.d), cx + 31, cy + 24);
-    // 근무 블록
-    const bx = cx + 6, by = cy + 46, bw = colW - 12, bh = cellH - 52;
-    const fg = i.shift ? textOn(i.color) : C.fg;
-    let top = by + 6;
+    ctx.font = `700 26px ${FONT}`; ctx.textAlign = 'center';
+    ctx.fillText(String(c.d), cx + 27, cy + 25);
     if (i.shift) {
-      ctx.fillStyle = i.color; roundRect(ctx, bx, by, bw, bh, 12); ctx.fill();
-      // 상단: 아이콘 + 약자 (같은 크기)
-      const TS = 26;
+      const fg = textOn(i.color);
+      const px = cx + 52, pw = colW - 58;
+      ctx.fillStyle = i.color; roundRect(ctx, px, cy + 7, pw, 34, 9); ctx.fill();
+      const TS = 24;
       ctx.font = `700 ${TS}px ${FONT}`;
-      const tw = TS + 4 + ctx.measureText(TYPES[i.shift].short).width;
-      const tx = bx + (bw - tw) / 2;
-      drawIcon(ctx, TYPES[i.shift].icon, tx + TS / 2, by + 22, TS - 2, fg);
+      const tw = TS - 2 + 3 + ctx.measureText(TYPES[i.shift].short).width;
+      const tx = px + (pw - tw) / 2;
+      drawIcon(ctx, TYPES[i.shift].icon, tx + (TS - 2) / 2, cy + 24, TS - 4, fg);
       ctx.fillStyle = fg; ctx.textAlign = 'left';
-      ctx.fillText(TYPES[i.shift].short, tx + TS + 4, by + 23);
-      top = by + 42;
+      ctx.fillText(TYPES[i.shift].short, tx + TS + 1, cy + 25);
     }
-    // 메모: 근무 표시 바로 아래 / 공휴일: 맨 아래 한 줄 (화면의 7px 비율로 확대)
+    // 메모: 상단 줄 바로 아래 / 공휴일: 맨 아래 한 줄 (화면의 7px 비율로 확대)
+    const bx = cx + 6, bw = colW - 12;
+    const top = cy + 50;
     const MS = Math.round(bw * 7 / 45);
     const lh = Math.round(MS * 1.25);
-    ctx.textAlign = 'left'; ctx.font = `600 ${MS}px ${FONT}`;
-    const bottom = by + bh - 6 - (i.hol ? lh : 0);
-    if (i.hol) {
-      ctx.fillStyle = i.shift ? fg : C.red;
-      ctx.fillText(shortHol(i.hol), bx + 4, by + bh - 6 - lh / 2);
-    }
+    ctx.textAlign = 'left'; ctx.font = `600 ${MS}px ${FONT}`; ctx.fillStyle = C.fg;
+    const bottom = cy + cellH - 8 - (i.hol ? lh : 0);
+    if (i.hol) ctx.fillText(shortHol(i.hol), bx + 2, cy + cellH - 8 - lh / 2);
     if (i.memo) {
-      const lines = wrapText(ctx, i.memo, bw - 8, `600 ${MS}px ${FONT}`);
+      const lines = wrapText(ctx, i.memo, bw - 4, `600 ${MS}px ${FONT}`);
       const maxLines = Math.max(0, Math.floor((bottom - top) / lh));
-      ctx.fillStyle = fg;
       lines.slice(0, maxLines).forEach((t, k) => {
-        if (k === maxLines - 1 && lines.length > maxLines) t = fitText(ctx, t + '…', bw - 8);
-        ctx.fillText(fitText(ctx, t, bw - 8), bx + 4, top + k * lh + lh / 2);
+        if (k === maxLines - 1 && lines.length > maxLines) t = fitText(ctx, t + '…', bw - 4);
+        ctx.fillText(fitText(ctx, t, bw - 4), bx + 2, top + k * lh + lh / 2);
       });
     }
     ctx.textAlign = 'center';

@@ -163,8 +163,9 @@ function render() {
     const fg = textOn(i.color);
     const t = i.shift ? TYPES[i.shift] : null;
     const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.memo ? ' 메모 있음' : ''}`;
-    const memo = (i.hol ? `<span class="hol">${esc(i.hol)}</span>` : '') + (i.memo ? `<span class="mt">${esc(i.memo)}</span>` : '');
-    const memoHtml = memo ? `<div class="memo">${memo}</div>` : '';
+    // 메모는 근무 표시 바로 아래, 공휴일 이름은 맨 아래 한 줄
+    const memoHtml = (i.memo ? `<div class="memo">${esc(i.memo)}</div>` : '') +
+      (i.hol ? `<div class="hol">${esc(shortHol(i.hol))}</div>` : '');
     const blk = t
       ? `<div class="blk${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${fg}"><div class="tag">${iconSvg(t.icon)}<span class="s">${t.short}</span></div>${memoHtml}</div>`
       : `<div class="blk empty">${memoHtml}</div>`;
@@ -448,28 +449,32 @@ async function renderImage() {
       ctx.fillText(TYPES[i.shift].short, tx + TS + 4, by + 23);
       top = by + 42;
     }
-    // 공휴일·메모 영역: 한 줄에 5글자 크기, 공휴일 먼저 그 아래 메모
-    const MS = Math.floor((bw - 8) / 5);
+    // 메모: 근무 표시 바로 아래 / 공휴일: 맨 아래 한 줄 (화면의 7px 비율로 확대)
+    const MS = Math.round(bw * 7 / 45);
     const lh = Math.round(MS * 1.25);
-    const maxLines = Math.max(0, Math.floor((by + bh - 4 - top) / lh));
-    const lines = [];
-    if (i.hol) wrapText(ctx, i.hol, bw - 8, `600 ${MS}px ${FONT}`).forEach(t => lines.push({ t, hol: true }));
-    if (i.memo) wrapText(ctx, i.memo, bw - 8, `600 ${MS}px ${FONT}`).forEach(t => lines.push({ t }));
-    ctx.textAlign = 'left';
-    lines.slice(0, maxLines).forEach((ln, k) => {
-      ctx.font = `600 ${MS}px ${FONT}`;
-      ctx.fillStyle = ln.hol && !i.shift ? C.red : fg;
-      let t = ln.t;
-      if (k === maxLines - 1 && lines.length > maxLines) t = fitText(ctx, t + '…', bw - 8);
-      else t = fitText(ctx, t, bw - 8);
-      ctx.fillText(t, bx + 4, top + k * lh + lh / 2);
-    });
+    ctx.textAlign = 'left'; ctx.font = `600 ${MS}px ${FONT}`;
+    const bottom = by + bh - 6 - (i.hol ? lh : 0);
+    if (i.hol) {
+      ctx.fillStyle = i.shift ? fg : C.red;
+      ctx.fillText(shortHol(i.hol), bx + 4, by + bh - 6 - lh / 2);
+    }
+    if (i.memo) {
+      const lines = wrapText(ctx, i.memo, bw - 8, `600 ${MS}px ${FONT}`);
+      const maxLines = Math.max(0, Math.floor((bottom - top) / lh));
+      ctx.fillStyle = fg;
+      lines.slice(0, maxLines).forEach((t, k) => {
+        if (k === maxLines - 1 && lines.length > maxLines) t = fitText(ctx, t + '…', bw - 8);
+        ctx.fillText(fitText(ctx, t, bw - 8), bx + 4, top + k * lh + lh / 2);
+      });
+    }
     ctx.textAlign = 'center';
     if (isToday) { ctx.strokeStyle = C.today; ctx.lineWidth = 5; roundRect(ctx, cx + 2.5, cy + 2.5, colW - 5, cellH - 5, 15); ctx.stroke(); }
     ctx.globalAlpha = 1;
   });
   return new Promise(res => cv.toBlob(res, 'image/png'));
 }
+// 공휴일 이름: 5글자까지, 넘으면 '…'
+function shortHol(name) { const a = [...name]; return a.length > 5 ? a.slice(0, 5).join('') + '…' : name; }
 function wrapText(ctx, text, max, font) {
   ctx.font = font;
   const out = [];

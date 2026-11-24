@@ -86,15 +86,18 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .cell .blk .tag { display: flex; flex-direction: row; flex-wrap: nowrap; white-space: nowrap; align-items: center; justify-content: center; gap: 2px; flex: none; height: 15px; }
 .cell .blk svg { width: 13px; height: 13px; flex: none; stroke-width: 2.4; }
 .cell .blk .s { font-size: 14px; font-weight: 700; line-height: 1; }
-/* 공휴일·메모: 한 줄에 5글자('대체공휴일')가 들어가는 크기 (블록 폭 기준) */
+/* 메모(근무 표시 아래)와 공휴일 이름(맨 아래): 7px */
 .cell .memo {
   flex: 1; min-height: 0; overflow: hidden; text-align: left;
-  font-size: 2.5vw; font-size: max(7px, calc((100cqw - 5px) / 5));
+  font-size: 7px;
   line-height: 1.25; font-weight: 600; letter-spacing: 0;
   white-space: pre-wrap; word-break: break-all; overflow-wrap: anywhere; padding: 0 2px;
 }
-.cell .memo .hol, .cell .memo .mt { display: block; }
-.cell .blk.empty .memo .hol { color: var(--red); }
+.cell .blk .hol {
+  flex: none; margin-top: auto; font-size: 7px; line-height: 1.25; font-weight: 600; text-align: left; padding: 0 2px;
+  white-space: nowrap; overflow: hidden;
+}
+.cell .blk.empty .hol { color: var(--red); }
 .cell .blk.empty .memo { color: var(--fg); }
 .cell .blk.ov::after {
   content: ""; position: absolute; top: 0; right: 0; width: 0; height: 0;

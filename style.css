@@ -110,6 +110,13 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   white-space: nowrap; overflow: hidden;
 }
 .cell.today { outline: 3px solid var(--today); outline-offset: -1px; z-index: 1; }
+/* 만나는 날: 날짜 숫자에 하트를 겹쳐 표시 */
+.cell .top .n { position: relative; isolation: isolate; }
+.cell.meet .top .n::before {
+  content: "❤️"; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -48%);
+  font-size: calc(var(--ts) * 1.7); line-height: 1; z-index: -1; pointer-events: none;
+}
+.cell.meet .top .n { color: #ffffff !important; text-shadow: 0 0 2px rgba(0, 0, 0, .9), 0 0 1px rgba(0, 0, 0, .9); }
 .cell.today .top .n { background: var(--today); color: var(--bg) !important; padding: 0 4px; }
 .cell:active { transform: scale(0.97); }
 
@@ -153,13 +160,14 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .who-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .who-pick button {
   position: relative; height: 48px; border-radius: 12px; border: 2px solid var(--line);
-  background: transparent; font-size: 16px; font-weight: 700;
+  background: transparent; font-size: 24px; line-height: 1;
 }
 .who-pick button.sel { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .who-pick button.has::after {
   content: ""; position: absolute; top: 7px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
 }
-.who-hint { margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--muted); }
+.who-hint { display: block; margin: 8px 0 0; font-size: 14px; font-weight: 600; color: var(--muted); }
+.check .heart { font-size: 22px; line-height: 1; }
 .shift-btn {
   height: 72px; border-radius: 14px; border: 3px solid transparent;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;

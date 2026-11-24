@@ -111,7 +111,7 @@ function info(s) {
   const restW = shift === 'W' && red;              // 주말·공휴일 일근 = 쉬는 날
   const color = shift ? (restW ? state.colors.O : state.colors[shift]) : null;
   return { s, dow, hol, red, shift, base, overridden: !!rec.shift && rec.shift !== base,
-    memo: rec.memo || '', memoM: rec.memoM || '', memoF: rec.memoF || '', restW, color };
+    memo: rec.memo || '', memoM: rec.memoM || '', memoF: rec.memoF || '', meet: !!rec.meet, restW, color };
 }
 function textOn(hex) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
@@ -179,9 +179,9 @@ function render() {
   grid.style.gridTemplateRows = `repeat(${rows}, minmax(64px, 1fr))`;
   grid.innerHTML = cells.map(c => {
     const i = info(c.s);
-    const cls = ['cell', c.other && 'other', i.red && 'red', c.s === today && 'today'].filter(Boolean).join(' ');
+    const cls = ['cell', c.other && 'other', i.red && 'red', c.s === today && 'today', i.meet && 'meet'].filter(Boolean).join(' ');
     const t = i.shift ? TYPES[i.shift] : null;
-    const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.memoM ? ' 남자 메모 ' + i.memoM : ''}${i.memoF ? ' 여자 메모 ' + i.memoF : ''}${i.memo ? ' 메모 ' + i.memo : ''}`;
+    const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.meet ? ' 만나는 날' : ''}${i.memoM ? ' 남자 메모 ' + i.memoM : ''}${i.memoF ? ' 여자 메모 ' + i.memoF : ''}${i.memo ? ' 메모 ' + i.memo : ''}`;
     const tag = t
       ? `<span class="tag${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${textOn(i.color)}">${iconSvg(t.icon)}<span class="s">${t.short}</span></span>`
       : '';
@@ -244,6 +244,7 @@ function openDay(s) {
   $('dayTitle').textContent = `${m}월 ${d}일 (${DOW[i.dow]})`;
   $('dayMemo').value = dayDraft.memos[''];
   renderWho();
+  $('dayMeet').checked = !!rec.meet;
   $('dayHolChk').checked = !!dayDraft.customHol;
   $('dayHolName').value = dayDraft.customHol;
   $('dayHolName').hidden = !dayDraft.customHol;
@@ -273,16 +274,26 @@ function renderWho() {
     b.setAttribute('aria-pressed', dayDraft.who === w ? 'true' : 'false');
     b.classList.toggle('has', !!dayDraft.memos[w].trim());
   });
-  $('whoHint').textContent = dayDraft.who === 'M' ? '👨 남자 메모를 쓰는 중'
-    : dayDraft.who === 'F' ? '👩 여자 메모를 쓰는 중'
-    : '공통 메모를 쓰는 중 (남자·여자를 고르지 않으면 공통 메모)';
 }
-$('whoPick').addEventListener('click', e => {
-  const b = e.target.closest('[data-who]'); if (!b) return;
-  dayDraft.memos[dayDraft.who] = $('dayMemo').value;
+// 👨/👩 를 눌러도 입력창 포커스(키보드)를 유지한다
+function switchWho(b) {
+  const ta = $('dayMemo');
+  const typing = document.activeElement === ta;
+  dayDraft.memos[dayDraft.who] = ta.value;
   dayDraft.who = dayDraft.who === b.dataset.who ? '' : b.dataset.who;
-  $('dayMemo').value = dayDraft.memos[dayDraft.who];
+  ta.value = dayDraft.memos[dayDraft.who];
   renderWho();
+  if (typing) { ta.focus(); const n = ta.value.length; ta.setSelectionRange(n, n); }
+}
+// 터치: touchend에서 바로 처리하고 기본 동작(포커스 이동)을 막는다
+$('whoPick').addEventListener('touchend', e => {
+  const b = e.target.closest('[data-who]'); if (!b) return;
+  e.preventDefault(); switchWho(b);
+}, { passive: false });
+// 마우스: 누를 때 포커스가 버튼으로 옮겨가지 않게
+$('whoPick').addEventListener('mousedown', e => { if (e.target.closest('[data-who]')) e.preventDefault(); });
+$('whoPick').addEventListener('click', e => {
+  const b = e.target.closest('[data-who]'); if (b) switchWho(b);
 });
 $('dayMemo').addEventListener('input', () => {
   dayDraft.memos[dayDraft.who] = $('dayMemo').value;
@@ -308,6 +319,7 @@ $('daySave').addEventListener('click', () => {
   if (memoM) rec.memoM = memoM;
   if (memoF) rec.memoF = memoF;
   if (memo) rec.memo = memo;
+  if ($('dayMeet').checked) rec.meet = true;
   if ($('dayHolChk').checked && !HOLIDAYS[s]) rec.holiday = $('dayHolName').value.trim() || '공휴일';
   if (Object.keys(rec).length) state.days[s] = rec; else delete state.days[s];
   save(); render(); closeSheet($('daySave'));
@@ -495,10 +507,13 @@ async function renderImage() {
     // 상단 줄: 날짜 + [아이콘+약자] (근무 색은 이 부분에만)
     const isToday = c.s === today && !c.other;
     if (isToday) { ctx.fillStyle = C.today; roundRect(ctx, cx + 5, cy + 7, 44, 34, 17); ctx.fill(); }
-    ctx.fillStyle = isToday ? C.bg : (i.red ? C.red : C.fg);
+    if (i.meet) { ctx.font = `44px ${FONT}`; ctx.textAlign = 'center'; ctx.fillText('❤️', cx + 27, cy + 26); }
+    ctx.fillStyle = (i.meet ? '#ffffff' : isToday ? C.bg : (i.red ? C.red : C.fg));
     const TS = 26; // 날짜·아이콘·근무 글자 같은 크기
     ctx.font = `700 ${TS}px ${FONT}`; ctx.textAlign = 'center';
+    if (i.meet) { ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 4; }
     ctx.fillText(String(c.d), cx + 27, cy + 25);
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
     if (i.shift) {
       const fg = textOn(i.color);
       const px = cx + 52, pw = colW - 58;
@@ -607,12 +622,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) rend
 // 확대(핀치·두 번 탭) 막기
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
 document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-let lastTouchEnd = 0;
-document.addEventListener('touchend', e => {
-  const t = Date.now();
-  if (t - lastTouchEnd < 350 && !e.target.closest('input, textarea')) e.preventDefault();
-  lastTouchEnd = t;
-}, { passive: false });
+// 두 번 탭 확대는 CSS touch-action: manipulation 으로 막는다 (연속 탭이 씹히지 않도록 스크립트로는 막지 않음)
 
 applyTheme();
 render();

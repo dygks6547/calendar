@@ -26,6 +26,7 @@
 
 [hidden] { display: none !important; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html, body { margin: 0; height: 100%; touch-action: manipulation; overscroll-behavior: none; }
 body {
   background: var(--bg); color: var(--fg); font-family: var(--font);
@@ -82,17 +83,17 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 2px;
   padding: 4px 2px 2px; container-type: inline-size;
 }
-.cell .blk .tag { display: flex; align-items: center; justify-content: center; gap: 2px; flex: none; height: 15px; }
+.cell .blk .tag { display: flex; flex-direction: row; flex-wrap: nowrap; white-space: nowrap; align-items: center; justify-content: center; gap: 2px; flex: none; height: 15px; }
 .cell .blk svg { width: 13px; height: 13px; flex: none; stroke-width: 2.4; }
 .cell .blk .s { font-size: 14px; font-weight: 700; line-height: 1; }
 /* 메모: 한 줄에 6글자가 들어가는 크기 (블록 폭 기준) */
 .cell .memo {
   flex: 1; min-height: 0; overflow: hidden; text-align: left;
-  font-size: 2.1vw; font-size: calc((100cqw - 4px) / 6);
+  font-size: 2.1vw; font-size: max(7px, calc((100cqw - 4px) / 6));
   line-height: 1.2; font-weight: 500; letter-spacing: 0;
   white-space: pre-wrap; word-break: break-all; overflow-wrap: anywhere; padding: 0 2px;
 }
-.cell .memo .hol { display: block; font-weight: 700; }
+.cell .memo .hol { display: block; font-size: 0.85em; font-weight: 600; opacity: .9; }
 .cell .blk.empty .memo .hol { color: var(--red); }
 .cell .blk.empty .memo { color: var(--fg); }
 .cell .blk.ov::after {

@@ -1,12 +1,17 @@
-const CACHE = 'shiftcal-v4';
+const CACHE = 'shiftcal-v5';
+const V = '?v=5';
 const ASSETS = [
-  './', 'index.html', 'style.css', 'app.js', 'holidays.js', 'manifest.json',
+  './', 'index.html', 'style.css' + V, 'app.js' + V, 'holidays.js' + V, 'manifest.json',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
 ];
 const FONT_HOST = 'cdn.jsdelivr.net';
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(ASSETS.map(u => new Request(u, { cache: 'reload' }))))
+      .then(() => self.skipWaiting())
+  );
 });
 self.addEventListener('activate', e => {
   e.waitUntil(
@@ -28,10 +33,10 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (url.origin !== location.origin) return;
-  // 앱 파일: 네트워크 우선(최신 반영), 실패 시 캐시
+  // 앱 파일: 항상 서버에 최신 여부 확인(브라우저 임시 저장 무시), 오프라인이면 캐시
   e.respondWith(
-    fetch(e.request)
-      .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return res; })
-      .catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match('index.html')))
+    fetch(e.request, { cache: 'no-cache' })
+      .then(res => { if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); } return res; })
+      .catch(() => caches.match(e.request).then(r => r || caches.match('index.html')))
   );
 });

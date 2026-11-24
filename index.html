@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>근무표</title>
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
@@ -13,6 +13,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -33,7 +34,6 @@
 </main>
 
 <nav class="tabbar">
-  <button id="btnPattern"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/></svg><span>패턴</span></button>
   <button id="btnImage"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 7a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3zM21 15l-5-5L5 21"/></svg><span>이미지 저장</span></button>
   <button id="btnSettings"><svg viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>설정</span></button>
 </nav>
@@ -94,6 +94,8 @@
       <h2 id="setTitle">설정</h2>
       <button class="iconbtn" data-close aria-label="닫기">✕</button>
     </div>
+    <div class="field">근무 패턴</div>
+    <button class="wide ghost rowbtn" id="openPattern"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/></svg><span id="patSummary">순환 패턴 설정</span><span class="chev">›</span></button>
     <div class="field">화면 모드</div>
     <div class="seg" id="themeSeg">
       <button data-theme-val="system">시스템</button>
@@ -104,13 +106,7 @@
     <div id="colorList"></div>
     <button class="wide ghost" id="colorReset">기본 색상으로 되돌리기</button>
     <div class="field">데이터</div>
-    <div class="row2">
-      <button class="wide ghost" id="exportBtn">백업 파일 저장</button>
-      <button class="wide ghost" id="importBtn">백업 불러오기</button>
-    </div>
-    <input type="file" id="importFile" accept="application/json,.json" hidden>
     <button class="wide danger" id="wipeBtn">모든 데이터 초기화</button>
-    <p class="sub small">데이터는 이 휴대폰의 브라우저에만 저장됩니다. 가끔 백업 파일을 저장해 두세요.</p>
   </div>
 </div>
 

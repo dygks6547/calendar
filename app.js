@@ -111,7 +111,7 @@ const $ = id => document.getElementById(id);
 function monthCells(y, m) {
   const first = new Date(y, m, 1).getDay();
   const dim = new Date(y, m + 1, 0).getDate();
-  const rows = Math.ceil((first + dim) / 7);
+  const rows = 6; // 월마다 칸 크기가 달라지지 않도록 항상 6주 표시
   const out = [];
   for (let i = 0; i < rows * 7; i++) {
     const s = ymd(y, m, i - first + 1);
@@ -138,7 +138,7 @@ function statItems(c) {
     { key: 'W', label: '일근', n: c.W },
     { key: 'WR', label: '일근(휴)', n: c.WR },
   ];
-  if (c.AL) items.push({ key: 'AL', label: '연차', n: c.AL });
+  items.push({ key: 'AL', label: '연차', n: c.AL });
   return items.map(it => {
     const color = it.key === 'WR' ? state.colors.O : state.colors[it.key];
     const short = it.key === 'WR' ? '일' : TYPES[it.key].short;
@@ -151,7 +151,7 @@ function render() {
   const today = todayStr();
 
   $('stats').innerHTML = statItems(monthStats(view.y, view.m)).map(it =>
-    `<span class="chip"><span class="sw" style="background:${it.color};color:${textOn(it.color)}">${it.short}</span>${it.label} <b>${it.n}</b></span>`
+    `<div class="stat"><span class="lbl"><i style="background:${it.color}"></i>${it.label}</span><b>${it.n}</b></div>`
   ).join('');
 
   const { cells, rows } = monthCells(view.y, view.m);
@@ -314,11 +314,13 @@ $('patSave').addEventListener('click', () => {
 /* ───────── 설정 ───────── */
 function openSettings() { renderSettings(); openSheet('setSheet'); }
 function renderSettings() {
+  const p = state.pattern;
+  $('patSummary').textContent = p.sequence.length ? `${p.sequence.map(k => TYPES[k].short).join('-')} · ${p.startDate.replace(/-/g, '.')} 시작` : '순환 패턴 설정';
   document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('sel', b.dataset.themeVal === state.theme));
   $('colorList').innerHTML = PICK_KEYS.map(k => {
     const c = state.colors[k];
     return `<label class="color-row"><span class="sw" style="background:${c};color:${textOn(c)}">${TYPES[k].short}</span>
-      <span class="lbl">${TYPES[k].label}${k === 'O' ? ' <small style="font-weight:600;color:var(--muted)">(주말 일근도 이 색)</small>' : ''}</span>
+      <span class="lbl">${TYPES[k].label}</span>
       <input type="color" data-k="${k}" value="${c}" aria-label="${TYPES[k].label} 색상"></label>`;
   }).join('');
 }
@@ -334,22 +336,6 @@ $('colorList').addEventListener('input', e => {
   save(); render();
 });
 $('colorReset').addEventListener('click', () => { state.colors = { ...DEFAULT_COLORS }; save(); render(); renderSettings(); });
-$('exportBtn').addEventListener('click', () => {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  downloadBlob(blob, `근무표-백업-${todayStr()}.json`);
-});
-$('importBtn').addEventListener('click', () => $('importFile').click());
-$('importFile').addEventListener('change', async e => {
-  const f = e.target.files[0]; e.target.value = '';
-  if (!f) return;
-  try {
-    const data = JSON.parse(await f.text());
-    if (!data || !data.pattern) throw new Error();
-    if (!confirm('현재 데이터를 백업 파일 내용으로 바꿀까요?')) return;
-    state = normalize(data); save(); applyTheme(); render(); renderSettings();
-    toast('불러왔습니다');
-  } catch { toast('올바른 백업 파일이 아닙니다'); }
-});
 $('wipeBtn').addEventListener('click', () => {
   if (!confirm('패턴, 예외 근무, 메모, 색상을 모두 초기화할까요?')) return;
   state = defaultState(); save(); applyTheme(); render(); renderSettings();
@@ -370,6 +356,12 @@ function drawIcon(ctx, name, cx, cy, size, color) {
 }
 async function renderImage() {
   const FONT = cssVar('--font');
+  // 웹폰트(부분 로딩)를 이미지에 쓰는 글자까지 미리 불러오기
+  try {
+    const glyphs = '0123456789년월근무표주야비일연차휴()' + DOW.join('') + Object.values(HOLIDAYS).join('') +
+      Object.values(state.days).map(d => d.holiday || '').join('');
+    await Promise.all(['600', '700'].map(w => document.fonts.load(`${w} 32px "Pretendard Variable"`, glyphs)));
+  } catch (e) { /* 오프라인 등: 시스템 글꼴 사용 */ }
   const C = { bg: cssVar('--bg'), fg: cssVar('--fg'), surface: cssVar('--surface'), red: cssVar('--red'), muted: cssVar('--muted'), today: cssVar('--today') };
   const W = 1080, P = 36, GAP = 8;
   const colW = (W - P * 2 - GAP * 6) / 7;
@@ -379,7 +371,7 @@ async function renderImage() {
   // 집계 칩 줄바꿈 배치
   const items = statItems(monthStats(view.y, view.m));
   const meas = document.createElement('canvas').getContext('2d');
-  meas.font = `800 32px ${FONT}`;
+  meas.font = `600 32px ${FONT}`;
   const widths = items.map(it => 68 + meas.measureText(`${it.label} ${it.n}`).width + 22);
   const lines = [[]]; let lw = 0;
   items.forEach((it, idx) => {
@@ -395,7 +387,7 @@ async function renderImage() {
   ctx.textBaseline = 'middle';
 
   // 제목
-  ctx.fillStyle = C.fg; ctx.textAlign = 'center'; ctx.font = `900 64px ${FONT}`;
+  ctx.fillStyle = C.fg; ctx.textAlign = 'center'; ctx.font = `700 60px ${FONT}`;
   ctx.fillText(`${view.y}년 ${view.m + 1}월 근무표`, W / 2, P + titleH / 2);
 
   // 집계
@@ -406,9 +398,9 @@ async function renderImage() {
       const it = items[idx], w = widths[idx];
       ctx.fillStyle = C.surface; roundRect(ctx, x, sy + 4, w, 60, 30); ctx.fill();
       ctx.fillStyle = it.color; roundRect(ctx, x + 8, sy + 10, 48, 48, 12); ctx.fill();
-      ctx.fillStyle = textOn(it.color); ctx.textAlign = 'center'; ctx.font = `900 30px ${FONT}`;
+      ctx.fillStyle = textOn(it.color); ctx.textAlign = 'center'; ctx.font = `700 28px ${FONT}`;
       ctx.fillText(it.short, x + 32, sy + 35);
-      ctx.fillStyle = C.fg; ctx.textAlign = 'left'; ctx.font = `800 32px ${FONT}`;
+      ctx.fillStyle = C.fg; ctx.textAlign = 'left'; ctx.font = `600 32px ${FONT}`;
       ctx.fillText(`${it.label} ${it.n}`, x + 68, sy + 35);
       x += w + 12;
     });
@@ -416,7 +408,7 @@ async function renderImage() {
 
   // 요일
   const wy = P + titleH + statH;
-  ctx.font = `800 30px ${FONT}`; ctx.textAlign = 'center';
+  ctx.font = `600 30px ${FONT}`; ctx.textAlign = 'center';
   DOW.forEach((d, i) => {
     ctx.fillStyle = i === 0 || i === 6 ? C.red : C.fg;
     ctx.fillText(d, P + i * (colW + GAP) + colW / 2, wy + wdH / 2);
@@ -436,7 +428,7 @@ async function renderImage() {
       ctx.fillStyle = C.today; roundRect(ctx, cx + 6, cy + 6, 50, 34, 17); ctx.fill();
     }
     ctx.fillStyle = isToday ? C.bg : (i.red ? C.red : C.fg);
-    ctx.font = `800 28px ${FONT}`; ctx.textAlign = 'center';
+    ctx.font = `600 28px ${FONT}`; ctx.textAlign = 'center';
     ctx.fillText(String(c.d), cx + 31, cy + 24);
     if (i.memo) { ctx.fillStyle = C.fg; ctx.beginPath(); ctx.arc(cx + colW - 16, cy + 23, 6, 0, Math.PI * 2); ctx.fill(); }
     // 근무 블록
@@ -444,12 +436,12 @@ async function renderImage() {
     if (i.shift) {
       const fg = textOn(i.color);
       ctx.fillStyle = i.color; roundRect(ctx, bx, by, bw, bh, 12); ctx.fill();
-      drawIcon(ctx, TYPES[i.shift].icon, bx + bw / 2, by + 26, 28, fg);
-      ctx.fillStyle = fg; ctx.font = `900 64px ${FONT}`;
-      ctx.fillText(TYPES[i.shift].short, bx + bw / 2, by + (i.hol ? 76 : 84));
-      if (i.hol) { ctx.font = `800 18px ${FONT}`; ctx.fillText(fitText(ctx, i.hol, bw - 8), bx + bw / 2, by + bh - 16); }
+      drawIcon(ctx, TYPES[i.shift].icon, bx + bw / 2, by + 30, 24, fg);
+      ctx.fillStyle = fg; ctx.font = `700 50px ${FONT}`;
+      ctx.fillText(TYPES[i.shift].short, bx + bw / 2, by + (i.hol ? 76 : 82));
+      if (i.hol) { ctx.font = `600 18px ${FONT}`; ctx.fillText(fitText(ctx, i.hol, bw - 8), bx + bw / 2, by + bh - 16); }
     } else if (i.hol) {
-      ctx.fillStyle = C.red; ctx.font = `800 18px ${FONT}`;
+      ctx.fillStyle = C.red; ctx.font = `600 18px ${FONT}`;
       ctx.fillText(fitText(ctx, i.hol, bw - 8), bx + bw / 2, by + bh - 16);
     }
     if (isToday) { ctx.strokeStyle = C.today; ctx.lineWidth = 5; roundRect(ctx, cx + 2.5, cy + 2.5, colW - 5, cellH - 5, 15); ctx.stroke(); }
@@ -494,7 +486,7 @@ $('prev').addEventListener('click', () => shiftMonth(-1));
 $('next').addEventListener('click', () => shiftMonth(1));
 $('today').addEventListener('click', () => { const t = new Date(); view = { y: t.getFullYear(), m: t.getMonth() }; render(); });
 $('grid').addEventListener('click', e => { const c = e.target.closest('[data-date]'); if (c) openDay(c.dataset.date); });
-$('btnPattern').addEventListener('click', openPattern);
+$('openPattern').addEventListener('click', () => { $('setSheet').hidden = true; openPattern(); });
 $('btnSettings').addEventListener('click', openSettings);
 
 // 좌우 스와이프로 월 이동
@@ -510,6 +502,16 @@ $('cal').addEventListener('touchend', e => {
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { applyTheme(); render(); });
 // 자정이 지나거나 앱으로 돌아왔을 때 '오늘' 갱신
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+
+// 확대(핀치·두 번 탭) 막기
+['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => {
+  const t = Date.now();
+  if (t - lastTouchEnd < 350 && !e.target.closest('input, textarea')) e.preventDefault();
+  lastTouchEnd = t;
+}, { passive: false });
 
 applyTheme();
 render();

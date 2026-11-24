@@ -218,8 +218,9 @@ function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<
 
 // 상단 연·월 선택 상자
 function renderYM() {
-  // 2026년 ~ 2030년 (화살표로 범위 밖에 가면 그 해도 목록에 보임)
-  const from = Math.min(2026, view.y), to = Math.max(2030, view.y);
+  // 2026년 ~ 2028년: 공휴일 목록(holidays.js)이 있는 해까지. 공휴일을 추가하면 이 숫자도 늘린다.
+  // (화살표로 범위 밖에 가면 그 해도 목록에 보임)
+  const from = Math.min(2026, view.y), to = Math.max(2028, view.y);
   let ys = '';
   for (let y = from; y <= to; y++) ys += `<option value="${y}"${y === view.y ? ' selected' : ''}>${y}년</option>`;
   $('selYear').innerHTML = ys;

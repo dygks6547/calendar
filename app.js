@@ -100,6 +100,17 @@ function patternShift(s) {
   const i = (((dayNum(s) - dayNum(p.startDate) + p.startIndex) % n) + n) % n;
   return p.sequence[i];
 }
+/* 기념일: 사귄 날(2026-11-21)을 1일로 100일 단위, 매년 같은 날 N주년 */
+const LOVE_START = '2026-11-21';
+function annivOf(s) {
+  const d = dayNum(s) - dayNum(LOVE_START) + 1;
+  if (d <= 1) return '';
+  const out = [];
+  const [y, m, dd] = parts(s), [sy, sm, sd] = parts(LOVE_START);
+  if (m === sm && dd === sd && y > sy) out.push(`${y - sy}주년`);
+  if (d % 100 === 0) out.push(`${d}일`);
+  return out.join(' · ');
+}
 function holidayOf(s) { return (state.days[s] && state.days[s].holiday) || HOLIDAYS[s] || ''; }
 function info(s) {
   const dow = dowOf(s);
@@ -111,7 +122,7 @@ function info(s) {
   const restW = shift === 'W' && red;              // 주말·공휴일 일근 = 쉬는 날
   const color = shift ? (restW ? state.colors.O : state.colors[shift]) : null;
   return { s, dow, hol, red, shift, base, overridden: !!rec.shift && rec.shift !== base,
-    memo: rec.memo || '', memoM: rec.memoM || '', memoF: rec.memoF || '', meet: !!rec.meet, restW, color };
+    memo: rec.memo || '', memoM: rec.memoM || '', memoF: rec.memoF || '', meet: !!rec.meet, anniv: annivOf(s), restW, color };
 }
 function textOn(hex) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
@@ -167,7 +178,7 @@ function statItems(c) {
 }
 
 function render() {
-  $('title').textContent = `${view.y}년 ${view.m + 1}월`;
+  renderYM();
   const today = todayStr();
 
   $('stats').innerHTML = statItems(monthStats(view.y, view.m)).map(it =>
@@ -181,7 +192,7 @@ function render() {
     const i = info(c.s);
     const cls = ['cell', c.other && 'other', i.red && 'red', c.s === today && 'today', i.meet && 'meet'].filter(Boolean).join(' ');
     const t = i.shift ? TYPES[i.shift] : null;
-    const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.meet ? ' 만나는 날' : ''}${i.memoM ? ' 남자 메모 ' + i.memoM : ''}${i.memoF ? ' 여자 메모 ' + i.memoF : ''}${i.memo ? ' 메모 ' + i.memo : ''}`;
+    const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.meet ? ' 만나는 날' : ''}${i.anniv ? ' ' + i.anniv : ''}${i.memoM ? ' 남자 메모 ' + i.memoM : ''}${i.memoF ? ' 여자 메모 ' + i.memoF : ''}${i.memo ? ' 메모 ' + i.memo : ''}`;
     const tag = t
       ? `<span class="tag${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${textOn(i.color)}">${iconSvg(t.icon)}<span class="s">${t.short}</span></span>`
       : '';
@@ -189,7 +200,7 @@ function render() {
     // 메모 순서: 👨 남자 → 👩 여자 → 공통
     const memoHtml = memoLines(i).map(m => `<span class="ml">${m.who ? `<span class="who">${m.who}</span>` : ''}${esc(m.text)}</span>`).join('');
     const body = (memoHtml ? `<div class="memo">${memoHtml}</div>` : '') +
-      (i.hol ? `<div class="hol">${esc(shortHol(i.hol))}</div>` : '');
+      ((i.anniv || i.hol) ? `<div class="foot">${i.anniv ? `<div class="anv">${i.anniv}</div>` : ''}${i.hol ? `<div class="hol">${esc(shortHol(i.hol))}</div>` : ''}</div>` : '');
     return `<button class="${cls}" data-date="${c.s}" aria-label="${esc(label)}">
       <div class="top"><span class="n">${c.d}</span>${tag}</div><div class="body">${body}</div></button>`;
   }).join('');
@@ -204,6 +215,20 @@ function memoLines(i) {
   return out;
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+
+// 상단 연·월 선택 상자
+function renderYM() {
+  const ty = new Date().getFullYear();
+  const from = Math.min(ty, view.y) - 2, to = Math.max(ty, view.y) + 3;
+  let ys = '';
+  for (let y = from; y <= to; y++) ys += `<option value="${y}"${y === view.y ? ' selected' : ''}>${y}년</option>`;
+  $('selYear').innerHTML = ys;
+  let ms = '';
+  for (let m = 0; m < 12; m++) ms += `<option value="${m}"${m === view.m ? ' selected' : ''}>${m + 1}월</option>`;
+  $('selMonth').innerHTML = ms;
+}
+$('selYear').addEventListener('change', e => { view = { y: +e.target.value, m: view.m }; render(); });
+$('selMonth').addEventListener('change', e => { view = { y: view.y, m: +e.target.value }; render(); });
 
 function shiftMonth(delta) {
   const t = new Date(view.y, view.m + delta, 1);
@@ -509,7 +534,7 @@ async function renderImage() {
       Object.values(state.days).map(d => d.holiday || '').join('');
     await Promise.all(['600', '700'].map(w => document.fonts.load(`${w} 32px "Pretendard Variable"`, glyphs)));
   } catch (e) { /* 오프라인 등: 시스템 글꼴 사용 */ }
-  const C = { bg: cssVar('--bg'), fg: cssVar('--fg'), surface: cssVar('--surface'), red: cssVar('--red'), muted: cssVar('--muted'), today: cssVar('--today') };
+  const C = { bg: cssVar('--bg'), fg: cssVar('--fg'), surface: cssVar('--surface'), red: cssVar('--red'), muted: cssVar('--muted'), today: cssVar('--today'), anniv: cssVar('--anniv') };
   const W = 1080, P = 36, GAP = 8;
   const colW = (W - P * 2 - GAP * 6) / 7;
   const { cells, rows } = monthCells(view.y, view.m);
@@ -599,8 +624,15 @@ async function renderImage() {
     const MS = Math.round(bw * 7 / 45);
     const lh = Math.round(MS * 1.25);
     ctx.textAlign = 'left'; ctx.font = `600 ${MS}px ${FONT}`; ctx.fillStyle = C.fg;
-    const bottom = cy + cellH - 8 - (i.hol ? lh : 0);
+    // 맨 아래: 공휴일, 그 바로 위: 기념일
+    const footLines = (i.hol ? 1 : 0) + (i.anniv ? 1 : 0);
+    const bottom = cy + cellH - 8 - footLines * lh;
     if (i.hol) ctx.fillText(shortHol(i.hol), bx + 2, cy + cellH - 8 - lh / 2);
+    if (i.anniv) {
+      ctx.fillStyle = C.anniv; ctx.font = `700 ${MS}px ${FONT}`;
+      ctx.fillText(fitText(ctx, i.anniv, bw - 4), bx + 2, cy + cellH - 8 - (i.hol ? lh : 0) - lh / 2);
+      ctx.fillStyle = C.fg; ctx.font = `600 ${MS}px ${FONT}`;
+    }
     const ms = memoLines(i);
     if (ms.length) {
       const lines = [];

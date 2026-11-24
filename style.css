@@ -1,5 +1,5 @@
 :root {
-  --bg: #ffffff;
+  --bg: #ffffff; --anniv: #d6336c;
   --fg: #111111;
   --muted: #4a4a4a;
   --line: #d4d4d8;
@@ -13,13 +13,13 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #000000; --fg: #f5f5f5; --muted: #c4c4c4; --line: #3a3a3e;
+    --bg: #000000; --anniv: #ff7a90; --fg: #f5f5f5; --muted: #c4c4c4; --line: #3a3a3e;
     --surface: #121214; --sheet: #161618; --red: #ff5c5c; --today: #ffffff; --accent: #6ea8ff;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #000000; --fg: #f5f5f5; --muted: #c4c4c4; --line: #3a3a3e;
+  --bg: #000000; --anniv: #ff7a90; --fg: #f5f5f5; --muted: #c4c4c4; --line: #3a3a3e;
   --surface: #121214; --sheet: #161618; --red: #ff5c5c; --today: #ffffff; --accent: #6ea8ff;
   color-scheme: dark;
 }
@@ -31,7 +31,7 @@ html, body { margin: 0; height: 100%; touch-action: manipulation; overscroll-beh
 body {
   background: var(--bg); color: var(--fg); font-family: var(--font);
   display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
-  padding-top: env(safe-area-inset-top);
+  padding-top: calc(env(safe-area-inset-top) + 10px);
   -webkit-text-size-adjust: 100%;
   user-select: none; -webkit-user-select: none;
 }
@@ -41,6 +41,18 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 /* 상단 바 */
 .top { display: flex; align-items: center; gap: 4px; padding: 6px 10px; flex: none; }
 .top h1 { flex: 1; text-align: center; margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+/* 연·월 선택 상자 */
+.ym { display: flex; justify-content: center; align-items: center; gap: 6px; }
+.ymsel { position: relative; display: inline-flex; }
+.ymsel select {
+  -webkit-appearance: none; appearance: none; border: 0; border-radius: 10px; cursor: pointer;
+  background: var(--surface); color: var(--fg); font: inherit; font-size: 20px; font-weight: 700;
+  height: 40px; padding: 0 26px 0 12px; letter-spacing: -0.5px;
+}
+.ymsel::after {
+  content: "▾"; position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: var(--muted); pointer-events: none;
+}
 .iconbtn {
   width: 48px; height: 48px; border: 0; background: transparent; border-radius: 12px;
   font-size: 34px; line-height: 1; display: grid; place-items: center; font-weight: 700;
@@ -105,6 +117,9 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 }
 .cell .memo .ml { display: block; }
 .cell .memo .who { font-size: 6px; margin-right: 1px; }
+.cell .foot { margin-top: auto; flex: none; }
+.cell .foot .hol { margin-top: 0; }
+.cell .anv { font-size: 7px; line-height: 1.25; font-weight: 700; padding: 0 1px; white-space: nowrap; overflow: hidden; color: var(--anniv); }
 .cell .hol {
   flex: none; margin-top: auto; font-size: 7px; line-height: 1.25; font-weight: 600; text-align: left; padding: 0 1px;
   white-space: nowrap; overflow: hidden;
@@ -127,11 +142,11 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); background: var(--bg);
 }
 .tabbar button {
-  height: 62px; border: 0; background: transparent; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 3px; font-size: 14px; font-weight: 700;
+  height: 50px; border: 0; background: transparent; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px; font-size: 12px; font-weight: 700;
 }
 .tabbar button:active { background: var(--surface); }
-.tabbar svg { width: 26px; height: 26px; }
+.tabbar svg { width: 22px; height: 22px; }
 
 /* 바텀시트 */
 .sheet-wrap { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }

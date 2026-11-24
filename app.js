@@ -58,6 +58,7 @@ function normalize(s) {
     colors: { ...DEFAULT_COLORS, ...(s.colors || {}) },
     days: s.days && typeof s.days === 'object' ? s.days : {},
     theme,
+    seeded: Array.isArray(s.seeded) ? s.seeded : [],
   };
 }
 function save() {
@@ -66,6 +67,28 @@ function save() {
 }
 
 let state = loadState();
+
+/* ───────── 코드로 넣는 메모 ─────────
+   앱이 열릴 때 한 번만 넣는다. 이미 있는 메모는 지우지 않고 아래 줄에 덧붙인다.
+   넣은 뒤에는 일반 메모와 같아서 화면에서 고치거나 지울 수 있고, 지워도 다시 생기지 않는다.
+   새로 넣으려면 id가 다른 항목을 추가한다. */
+const CODE_MEMOS = [
+  { id: 'test-2026-12-17', date: '2026-12-17', memo: 'test' },
+];
+function applyCodeMemos() {
+  if (!Array.isArray(state.seeded)) state.seeded = [];
+  let changed = false;
+  for (const m of CODE_MEMOS) {
+    if (state.seeded.includes(m.id)) continue;
+    const rec = state.days[m.date] || {};
+    rec.memo = rec.memo ? `${rec.memo}\n${m.memo}` : m.memo;
+    state.days[m.date] = rec;
+    state.seeded.push(m.id);
+    changed = true;
+  }
+  if (changed) save();
+}
+applyCodeMemos();
 const now = new Date();
 let view = { y: now.getFullYear(), m: now.getMonth() };
 

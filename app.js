@@ -109,7 +109,7 @@ function iconSvg(name) {
 const $ = id => document.getElementById(id);
 
 function monthCells(y, m) {
-  const first = new Date(y, m, 1).getDay();
+  const first = (new Date(y, m, 1).getDay() + 6) % 7; // 월요일 시작
   const dim = new Date(y, m + 1, 0).getDate();
   const rows = 6; // 월마다 칸 크기가 달라지지 않도록 항상 6주 표시
   const out = [];
@@ -411,8 +411,8 @@ async function renderImage() {
   // 요일
   const wy = P + titleH + statH;
   ctx.font = `600 30px ${FONT}`; ctx.textAlign = 'center';
-  DOW.forEach((d, i) => {
-    ctx.fillStyle = i === 0 || i === 6 ? C.red : C.fg;
+  ['월', '화', '수', '목', '금', '토', '일'].forEach((d, i) => {
+    ctx.fillStyle = i >= 5 ? C.red : C.fg;
     ctx.fillText(d, P + i * (colW + GAP) + colW / 2, wy + wdH / 2);
   });
 

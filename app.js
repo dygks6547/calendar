@@ -218,8 +218,8 @@ function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<
 
 // 상단 연·월 선택 상자
 function renderYM() {
-  const ty = new Date().getFullYear();
-  const from = Math.min(ty, view.y) - 2, to = Math.max(ty, view.y) + 3;
+  // 2026년 ~ 2030년 (화살표로 범위 밖에 가면 그 해도 목록에 보임)
+  const from = Math.min(2026, view.y), to = Math.max(2030, view.y);
   let ys = '';
   for (let y = from; y <= to; y++) ys += `<option value="${y}"${y === view.y ? ' selected' : ''}>${y}년</option>`;
   $('selYear').innerHTML = ys;

@@ -68,27 +68,21 @@ function save() {
 
 let state = loadState();
 
-/* ───────── 코드로 넣는 메모 ─────────
-   앱이 열릴 때 한 번만 넣는다. 이미 있는 메모는 지우지 않고 아래 줄에 덧붙인다.
-   넣은 뒤에는 일반 메모와 같아서 화면에서 고치거나 지울 수 있고, 지워도 다시 생기지 않는다.
-   새로 넣으려면 id가 다른 항목을 추가한다. */
-const CODE_MEMOS = [
-  { id: 'test-2026-12-17', date: '2026-12-17', memo: 'test' },
-];
-function applyCodeMemos() {
-  if (!Array.isArray(state.seeded)) state.seeded = [];
-  let changed = false;
-  for (const m of CODE_MEMOS) {
-    if (state.seeded.includes(m.id)) continue;
-    const rec = state.days[m.date] || {};
-    rec.memo = rec.memo ? `${rec.memo}\n${m.memo}` : m.memo;
-    state.days[m.date] = rec;
-    state.seeded.push(m.id);
-    changed = true;
+/* 시험용으로 코드에서 넣었던 12/17 'test' 메모를 한 번 정리 (직접 쓴 메모는 그대로) */
+(function removeTestMemo() {
+  if (!Array.isArray(state.seeded) || !state.seeded.includes('test-2026-12-17')) return;
+  const rec = state.days['2026-12-17'];
+  if (rec && rec.memo) {
+    const lines = rec.memo.split('\n');
+    const i = lines.lastIndexOf('test');
+    if (i >= 0) lines.splice(i, 1);
+    rec.memo = lines.join('\n').trim();
+    if (!rec.memo) delete rec.memo;
+    if (!Object.keys(rec).length) delete state.days['2026-12-17'];
   }
-  if (changed) save();
-}
-applyCodeMemos();
+  state.seeded = state.seeded.filter(id => id !== 'test-2026-12-17');
+  save();
+})();
 const now = new Date();
 let view = { y: now.getFullYear(), m: now.getMonth() };
 

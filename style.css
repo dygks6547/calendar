@@ -167,8 +167,17 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .who-pick button.has::after {
   content: ""; position: absolute; top: 7px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
 }
+.row2 > * { min-width: 0; }
 .row2 .field { margin-top: 6px; }
-.row2 .field .text { font-size: 16px; padding: 10px; }
+/* 날짜 칸: 기기마다 다른 기본 모양을 없애고 높이·정렬을 고정 */
+input[type="date"].text {
+  -webkit-appearance: none; appearance: none; box-sizing: border-box;
+  width: 100%; min-width: 0; max-width: 100%; height: 50px; margin-top: 6px;
+  padding: 0 12px; font-size: 16px; line-height: 50px; text-align: left;
+}
+input[type="date"].text::-webkit-date-and-time-value { text-align: left; margin: 0; }
+input[type="date"].text::-webkit-datetime-edit { padding: 0; }
+input[type="date"].text::-webkit-calendar-picker-indicator { margin-left: 4px; }
 .who-hint { display: block; margin: 8px 0 0; font-size: 14px; font-weight: 600; color: var(--muted); }
 .check .heart { display: inline-block; width: 26px; height: 26px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23E8283C' d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E") center / contain no-repeat; }
 .shift-btn {

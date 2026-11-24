@@ -110,7 +110,8 @@ function info(s) {
   const shift = rec.shift || base;
   const restW = shift === 'W' && red;              // 주말·공휴일 일근 = 쉬는 날
   const color = shift ? (restW ? state.colors.O : state.colors[shift]) : null;
-  return { s, dow, hol, red, shift, base, overridden: !!rec.shift && rec.shift !== base, memo: rec.memo || '', restW, color };
+  return { s, dow, hol, red, shift, base, overridden: !!rec.shift && rec.shift !== base,
+    memo: rec.memo || '', memoM: rec.memoM || '', memoF: rec.memoF || '', restW, color };
 }
 function textOn(hex) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
@@ -180,16 +181,26 @@ function render() {
     const i = info(c.s);
     const cls = ['cell', c.other && 'other', i.red && 'red', c.s === today && 'today'].filter(Boolean).join(' ');
     const t = i.shift ? TYPES[i.shift] : null;
-    const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.memo ? ' 메모 ' + i.memo : ''}`;
+    const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.memoM ? ' 남자 메모 ' + i.memoM : ''}${i.memoF ? ' 여자 메모 ' + i.memoF : ''}${i.memo ? ' 메모 ' + i.memo : ''}`;
     const tag = t
       ? `<span class="tag${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${textOn(i.color)}">${iconSvg(t.icon)}<span class="s">${t.short}</span></span>`
       : '';
     // 메모는 상단 줄 바로 아래, 공휴일 이름은 맨 아래 한 줄
-    const body = (i.memo ? `<div class="memo">${esc(i.memo)}</div>` : '') +
+    // 메모 순서: 👨 남자 → 👩 여자 → 공통
+    const memoHtml = memoLines(i).map(m => `<span class="ml">${m.who ? `<span class="who">${m.who}</span>` : ''}${esc(m.text)}</span>`).join('');
+    const body = (memoHtml ? `<div class="memo">${memoHtml}</div>` : '') +
       (i.hol ? `<div class="hol">${esc(shortHol(i.hol))}</div>` : '');
     return `<button class="${cls}" data-date="${c.s}" aria-label="${esc(label)}">
       <div class="top"><span class="n">${c.d}</span>${tag}</div><div class="body">${body}</div></button>`;
   }).join('');
+}
+const WHO = { M: '👨', F: '👩' };
+function memoLines(i) {
+  const out = [];
+  if (i.memoM) out.push({ who: WHO.M, text: i.memoM });
+  if (i.memoF) out.push({ who: WHO.F, text: i.memoF });
+  if (i.memo) out.push({ who: '', text: i.memo });
+  return out;
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
 
@@ -216,8 +227,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.querySelectorAll('.sheet-wrap:not([hidden])').forEach(w => w.hidden = true);
 });
 
-function shiftButton(k, sel, extra = '') {
+function shiftButton(k, sel, extra = '', compact = false) {
   const color = state.colors[k];
+  if (compact) return `<button class="shift-btn compact${sel ? ' sel' : ''}" data-k="${k}" style="background:${color};color:${textOn(color)}">${iconSvg(TYPES[k].icon)}<span>${TYPES[k].label}</span></button>`;
   return `<button class="shift-btn${sel ? ' sel' : ''}" data-k="${k}" ${extra} style="background:${color};color:${textOn(color)}">
     ${iconSvg(TYPES[k].icon)}<span class="s">${TYPES[k].short}</span>${TYPES[k].label}</button>`;
 }
@@ -227,10 +239,11 @@ let dayDraft = null;
 function openDay(s) {
   const i = info(s);
   const rec = state.days[s] || {};
-  dayDraft = { s, shift: i.shift, memo: rec.memo || '', customHol: rec.holiday || '' };
+  dayDraft = { s, shift: i.shift, who: '', memos: { '': rec.memo || '', M: rec.memoM || '', F: rec.memoF || '' }, customHol: rec.holiday || '' };
   const [y, m, d] = parts(s);
   $('dayTitle').textContent = `${m}월 ${d}일 (${DOW[i.dow]})`;
-  $('dayMemo').value = dayDraft.memo;
+  $('dayMemo').value = dayDraft.memos[''];
+  renderWho();
   $('dayHolChk').checked = !!dayDraft.customHol;
   $('dayHolName').value = dayDraft.customHol;
   $('dayHolName').hidden = !dayDraft.customHol;
@@ -244,14 +257,38 @@ function renderDay() {
   const builtinHol = HOLIDAYS[s];
   const bits = [];
   if (builtinHol) bits.push(`<span class="red">${esc(builtinHol)}</span>`);
-  bits.push(`패턴 근무: ${base ? TYPES[base].label : '없음'}`);
+  bits.push(`근무 패턴: ${base ? TYPES[base].label : '없음'}`);
   if (dayDraft.shift === 'W') {
     const red = dowOf(s) === 0 || dowOf(s) === 6 || builtinHol || ($('dayHolChk').checked);
     bits.push(red ? '주말·공휴일 일근 → 휴무' : '평일 일근 → 주간과 동일');
   }
   $('daySub').innerHTML = bits.join(' · ');
-  $('dayPick').innerHTML = PICK_KEYS.map(k => shiftButton(k, k === dayDraft.shift)).join('');
+  $('dayPick').innerHTML = PICK_KEYS.map(k => shiftButton(k, k === dayDraft.shift, '', true)).join('');
 }
+// 메모 작성자: 남자/여자 중 하나를 고르거나, 고르지 않으면 공통 메모
+function renderWho() {
+  document.querySelectorAll('#whoPick button').forEach(b => {
+    const w = b.dataset.who;
+    b.classList.toggle('sel', dayDraft.who === w);
+    b.setAttribute('aria-pressed', dayDraft.who === w ? 'true' : 'false');
+    b.classList.toggle('has', !!dayDraft.memos[w].trim());
+  });
+  $('whoHint').textContent = dayDraft.who === 'M' ? '👨 남자 메모를 쓰는 중'
+    : dayDraft.who === 'F' ? '👩 여자 메모를 쓰는 중'
+    : '공통 메모를 쓰는 중 (남자·여자를 고르지 않으면 공통 메모)';
+}
+$('whoPick').addEventListener('click', e => {
+  const b = e.target.closest('[data-who]'); if (!b) return;
+  dayDraft.memos[dayDraft.who] = $('dayMemo').value;
+  dayDraft.who = dayDraft.who === b.dataset.who ? '' : b.dataset.who;
+  $('dayMemo').value = dayDraft.memos[dayDraft.who];
+  renderWho();
+});
+$('dayMemo').addEventListener('input', () => {
+  dayDraft.memos[dayDraft.who] = $('dayMemo').value;
+  const b = document.querySelector(`#whoPick [data-who="${dayDraft.who}"]`);
+  if (b) b.classList.toggle('has', !!$('dayMemo').value.trim());
+});
 $('dayPick').addEventListener('click', e => {
   const b = e.target.closest('[data-k]'); if (!b) return;
   dayDraft.shift = b.dataset.k; renderDay();
@@ -266,7 +303,10 @@ $('daySave').addEventListener('click', () => {
   const s = dayDraft.s;
   const rec = {};
   if (dayDraft.shift && dayDraft.shift !== patternShift(s)) rec.shift = dayDraft.shift;
-  const memo = $('dayMemo').value.trim();
+  dayDraft.memos[dayDraft.who] = $('dayMemo').value;
+  const memo = dayDraft.memos[''].trim(), memoM = dayDraft.memos.M.trim(), memoF = dayDraft.memos.F.trim();
+  if (memoM) rec.memoM = memoM;
+  if (memoF) rec.memoF = memoF;
   if (memo) rec.memo = memo;
   if ($('dayHolChk').checked && !HOLIDAYS[s]) rec.holiday = $('dayHolName').value.trim() || '공휴일';
   if (Object.keys(rec).length) state.days[s] = rec; else delete state.days[s];
@@ -338,6 +378,7 @@ function renderSettings() {
   const p = state.pattern;
   $('patSummary').textContent = p.sequence.length ? `${p.sequence.map(k => TYPES[k].short).join('-')} · ${p.startDate.replace(/-/g, '.')} 시작` : '순환 패턴 설정';
   document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('sel', b.dataset.themeVal === state.theme));
+  $('imgLabel').textContent = `${view.y}년 ${view.m + 1}월 근무표 이미지 저장`;
   $('colorSummary').innerHTML = PICK_KEYS.map(k => `<i style="background:${state.colors[k]}" title="${TYPES[k].label}"></i>`).join('');
 }
 function renderColors() {
@@ -477,8 +518,10 @@ async function renderImage() {
     ctx.textAlign = 'left'; ctx.font = `600 ${MS}px ${FONT}`; ctx.fillStyle = C.fg;
     const bottom = cy + cellH - 8 - (i.hol ? lh : 0);
     if (i.hol) ctx.fillText(shortHol(i.hol), bx + 2, cy + cellH - 8 - lh / 2);
-    if (i.memo) {
-      const lines = wrapText(ctx, i.memo, bw - 4, `600 ${MS}px ${FONT}`);
+    const ms = memoLines(i);
+    if (ms.length) {
+      const lines = [];
+      ms.forEach(m => wrapText(ctx, (m.who ? m.who + ' ' : '') + m.text, bw - 4, `600 ${MS}px ${FONT}`).forEach(t => lines.push(t)));
       const maxLines = Math.max(0, Math.floor((bottom - top) / lh));
       lines.slice(0, maxLines).forEach((t, k) => {
         if (k === maxLines - 1 && lines.length > maxLines) t = fitText(ctx, t + '…', bw - 4);
@@ -518,6 +561,7 @@ function downloadBlob(blob, name) {
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 $('btnImage').addEventListener('click', async () => {
+  $('setSheet').hidden = true;
   try {
     const blob = await renderImage();
     const name = `근무표-${view.y}-${pad(view.m + 1)}.png`;

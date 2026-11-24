@@ -13,7 +13,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 <header class="top">
@@ -33,7 +33,6 @@
 </main>
 
 <nav class="tabbar">
-  <button id="btnImage"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 7a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3zM21 15l-5-5L5 21"/></svg><span>이미지 저장</span></button>
   <button id="btnSettings"><svg viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>설정</span></button>
 </nav>
 
@@ -46,11 +45,15 @@
       <button class="iconbtn" data-close aria-label="닫기">✕</button>
     </div>
     <p class="sub" id="daySub"></p>
-    <div class="shift-pick" id="dayPick"></div>
-    <button class="wide ghost" id="dayReset">↺ 패턴대로 되돌리기</button>
-    <label class="field">메모
-      <textarea id="dayMemo" rows="2" maxlength="200" placeholder="예: 교육, 병원 예약"></textarea>
-    </label>
+    <div class="shift-pick five" id="dayPick"></div>
+    <button class="wide ghost" id="dayReset">되돌리기</button>
+    <div class="field">메모</div>
+    <div class="who-pick" id="whoPick">
+      <button data-who="M" aria-pressed="false">👨 남자</button>
+      <button data-who="F" aria-pressed="false">👩 여자</button>
+    </div>
+    <p class="who-hint" id="whoHint"></p>
+    <textarea id="dayMemo" rows="2" maxlength="200" aria-label="메모"></textarea>
     <label class="check"><input type="checkbox" id="dayHolChk"> 공휴일로 지정 (임시공휴일 등)</label>
     <input type="text" id="dayHolName" class="text" placeholder="공휴일 이름" maxlength="20" hidden>
     <div class="row2">
@@ -102,6 +105,8 @@
       <button data-theme-val="light">라이트</button>
       <button data-theme-val="dark">다크</button>
     </div>
+    <div class="field">이미지 저장</div>
+    <button class="wide ghost rowbtn" id="btnImage"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 7a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3zM21 15l-5-5L5 21"/></svg><span id="imgLabel">이번 달 근무표 이미지 저장</span><span class="chev">›</span></button>
     <div class="field">초기화</div>
     <button class="wide ghost rowbtn" id="openReset"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg><span>데이터 초기화</span><span class="chev">›</span></button>
   </div>
@@ -137,7 +142,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="holidays.js?v=12"></script>
-<script src="app.js?v=12"></script>
+<script src="holidays.js?v=13"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>

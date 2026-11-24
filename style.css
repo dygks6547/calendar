@@ -103,6 +103,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   font-size: 7px; line-height: 1.25; font-weight: 600;
   white-space: pre-wrap; word-break: break-all; overflow-wrap: anywhere; padding: 0 1px;
 }
+.cell .memo .ml { display: block; }
+.cell .memo .who { font-size: 6px; margin-right: 1px; }
 .cell .hol {
   flex: none; margin-top: auto; font-size: 7px; line-height: 1.25; font-weight: 600; text-align: left; padding: 0 1px;
   white-space: nowrap; overflow: hidden;
@@ -113,7 +115,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 
 /* 하단 탭 */
 .tabbar {
-  flex: none; display: grid; grid-template-columns: repeat(2, 1fr);
+  flex: none; display: grid; grid-template-columns: 1fr;
   border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); background: var(--bg);
 }
 .tabbar button {
@@ -143,6 +145,21 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 
 .shift-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
 .shift-pick.four { grid-template-columns: repeat(4, 1fr); }
+.shift-pick.five { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.shift-btn.compact { height: 58px; border-radius: 12px; font-size: 14px; gap: 4px; padding: 0; }
+.shift-btn.compact svg { width: 20px; height: 20px; }
+.shift-btn.compact.sel::after { top: -6px; right: -6px; width: 20px; height: 20px; font-size: 12px; }
+/* 메모 작성자 (선택) */
+.who-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.who-pick button {
+  position: relative; height: 48px; border-radius: 12px; border: 2px solid var(--line);
+  background: transparent; font-size: 16px; font-weight: 700;
+}
+.who-pick button.sel { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.who-pick button.has::after {
+  content: ""; position: absolute; top: 7px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+}
+.who-hint { margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--muted); }
 .shift-btn {
   height: 72px; border-radius: 14px; border: 3px solid transparent;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;

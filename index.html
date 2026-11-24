@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>근무표</title>
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="근무표">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <button class="iconbtn" id="prev" aria-label="이전 달">‹</button>
+  <h1 id="title">2026년 12월</h1>
+  <button class="iconbtn" id="next" aria-label="다음 달">›</button>
+  <button class="todaybtn" id="today">오늘</button>
+</header>
+
+<section class="stats" id="stats" aria-label="월간 근무 집계"></section>
+
+<main class="cal" id="cal">
+  <div class="weekdays">
+    <div class="sun">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="sat">토</div>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<nav class="tabbar">
+  <button id="btnPattern"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/></svg><span>패턴</span></button>
+  <button id="btnImage"><svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zM8.5 7a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3zM21 15l-5-5L5 21"/></svg><span>이미지 저장</span></button>
+  <button id="btnSettings"><svg viewBox="0 0 24 24"><path d="M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>설정</span></button>
+</nav>
+
+<!-- 날짜 편집 -->
+<div class="sheet-wrap" id="daySheet" hidden>
+  <div class="backdrop" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
+    <div class="sheet-head">
+      <h2 id="dayTitle"></h2>
+      <button class="iconbtn" data-close aria-label="닫기">✕</button>
+    </div>
+    <p class="sub" id="daySub"></p>
+    <div class="shift-pick" id="dayPick"></div>
+    <button class="wide ghost" id="dayReset">↺ 패턴대로 되돌리기</button>
+    <label class="field">메모
+      <textarea id="dayMemo" rows="2" maxlength="200" placeholder="예: 교육, 병원 예약"></textarea>
+    </label>
+    <label class="check"><input type="checkbox" id="dayHolChk"> 공휴일로 지정 (임시공휴일 등)</label>
+    <input type="text" id="dayHolName" class="text" placeholder="공휴일 이름" maxlength="20" hidden>
+    <div class="row2">
+      <button class="wide ghost" data-close>취소</button>
+      <button class="wide primary" id="daySave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 패턴 설정 -->
+<div class="sheet-wrap" id="patSheet" hidden>
+  <div class="backdrop" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="patTitle">
+    <div class="sheet-head">
+      <h2 id="patTitle">순환 패턴</h2>
+      <button class="iconbtn" data-close aria-label="닫기">✕</button>
+    </div>
+    <p class="sub">근무 버튼을 눌러 순서대로 추가하세요. 추가된 칸을 누르면 삭제됩니다.</p>
+    <div class="seq" id="patSeq"></div>
+    <div class="shift-pick four" id="patAdd"></div>
+    <label class="field">시작일
+      <input type="date" id="patDate" class="text">
+    </label>
+    <div class="field">시작일의 근무</div>
+    <div class="seq" id="patStart"></div>
+    <div class="field">미리보기</div>
+    <div class="preview" id="patPreview"></div>
+    <div class="row2">
+      <button class="wide ghost" data-close>취소</button>
+      <button class="wide primary" id="patSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 설정 -->
+<div class="sheet-wrap" id="setSheet" hidden>
+  <div class="backdrop" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="sheet-head">
+      <h2 id="setTitle">설정</h2>
+      <button class="iconbtn" data-close aria-label="닫기">✕</button>
+    </div>
+    <div class="field">화면 모드</div>
+    <div class="seg" id="themeSeg">
+      <button data-theme-val="system">시스템</button>
+      <button data-theme-val="light">라이트</button>
+      <button data-theme-val="dark">다크</button>
+    </div>
+    <div class="field">근무 색상</div>
+    <div id="colorList"></div>
+    <button class="wide ghost" id="colorReset">기본 색상으로 되돌리기</button>
+    <div class="field">데이터</div>
+    <div class="row2">
+      <button class="wide ghost" id="exportBtn">백업 파일 저장</button>
+      <button class="wide ghost" id="importBtn">백업 불러오기</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+    <button class="wide danger" id="wipeBtn">모든 데이터 초기화</button>
+    <p class="sub small">데이터는 이 휴대폰의 브라우저에만 저장됩니다. 가끔 백업 파일을 저장해 두세요.</p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="holidays.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

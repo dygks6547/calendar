@@ -71,28 +71,29 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
   background: var(--surface); border-radius: 9px; overflow: hidden; border: 0; padding: 0; text-align: left;
 }
 .cell.other { opacity: 0.38; }
+/* 날짜·아이콘·근무 글자는 같은 크기 (--ts) */
+.cell { --ts: 13px; }
 .cell .top { display: flex; align-items: center; gap: 2px; height: 24px; padding: 3px 3px 0; flex: none; }
 .cell .top .n {
   flex: none; min-width: 18px; height: 20px; padding: 0 1px; display: grid; place-items: center;
-  border-radius: 10px; font-size: 14px; font-weight: 700; letter-spacing: -0.5px;
+  border-radius: 10px; font-size: var(--ts); font-weight: 700; letter-spacing: -0.5px; line-height: 1;
 }
 .cell.red .top .n { color: var(--red); }
 .cell .tag {
   position: relative; flex: 1; min-width: 0; height: 20px; border-radius: 6px; overflow: hidden;
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 1px; white-space: nowrap;
 }
-.cell .tag svg { width: 11px; height: 11px; flex: none; stroke-width: 2.5; }
-.cell .tag .s { font-size: 13px; font-weight: 700; line-height: 1; }
+.cell .tag svg { width: var(--ts); height: var(--ts); flex: none; stroke-width: 2.3; }
+.cell .tag .s { font-size: var(--ts); font-weight: 700; line-height: 1; }
 .cell .tag.ov::after {
   content: ""; position: absolute; top: 0; right: 0; width: 0; height: 0;
   border-top: 6px solid currentColor; border-left: 6px solid transparent; opacity: .9;
 }
 @media (max-width: 380px) {
+  .cell { --ts: 12px; }
   .cell .top { padding: 2px 2px 0; gap: 1px; }
-  .cell .top .n { min-width: 15px; font-size: 13px; padding: 0; }
+  .cell .top .n { min-width: 14px; padding: 0; }
   .cell .tag { gap: 0; }
-  .cell .tag svg { width: 10px; height: 10px; }
-  .cell .tag .s { font-size: 12px; }
 }
 @media (max-width: 340px) { .cell .tag svg { display: none; } }
 /* 메모(상단 줄 아래)와 공휴일 이름(맨 아래): 7px, 배경색 위에 기본 글자색 */

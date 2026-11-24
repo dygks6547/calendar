@@ -431,19 +431,19 @@ async function renderImage() {
     const isToday = c.s === today && !c.other;
     if (isToday) { ctx.fillStyle = C.today; roundRect(ctx, cx + 5, cy + 7, 44, 34, 17); ctx.fill(); }
     ctx.fillStyle = isToday ? C.bg : (i.red ? C.red : C.fg);
-    ctx.font = `700 26px ${FONT}`; ctx.textAlign = 'center';
+    const TS = 26; // 날짜·아이콘·근무 글자 같은 크기
+    ctx.font = `700 ${TS}px ${FONT}`; ctx.textAlign = 'center';
     ctx.fillText(String(c.d), cx + 27, cy + 25);
     if (i.shift) {
       const fg = textOn(i.color);
       const px = cx + 52, pw = colW - 58;
       ctx.fillStyle = i.color; roundRect(ctx, px, cy + 7, pw, 34, 9); ctx.fill();
-      const TS = 24;
       ctx.font = `700 ${TS}px ${FONT}`;
-      const tw = TS - 2 + 3 + ctx.measureText(TYPES[i.shift].short).width;
+      const tw = TS + 2 + ctx.measureText(TYPES[i.shift].short).width;
       const tx = px + (pw - tw) / 2;
-      drawIcon(ctx, TYPES[i.shift].icon, tx + (TS - 2) / 2, cy + 24, TS - 4, fg);
+      drawIcon(ctx, TYPES[i.shift].icon, tx + TS / 2, cy + 24, TS, fg);
       ctx.fillStyle = fg; ctx.textAlign = 'left';
-      ctx.fillText(TYPES[i.shift].short, tx + TS + 1, cy + 25);
+      ctx.fillText(TYPES[i.shift].short, tx + TS + 2, cy + 25);
     }
     // 메모: 상단 줄 바로 아래 / 공휴일: 맨 아래 한 줄 (화면의 7px 비율로 확대)
     const bx = cx + 6, bw = colW - 12;

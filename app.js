@@ -163,7 +163,7 @@ function render() {
     const fg = textOn(i.color);
     const t = i.shift ? TYPES[i.shift] : null;
     const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.memo ? ' 메모 있음' : ''}`;
-    const memo = (i.hol ? `<span class="hol">${esc(i.hol)}</span>` : '') + (i.memo ? esc(i.memo) : '');
+    const memo = (i.hol ? `<span class="hol">${esc(i.hol)}</span>` : '') + (i.memo ? `<span class="mt">${esc(i.memo)}</span>` : '');
     const memoHtml = memo ? `<div class="memo">${memo}</div>` : '';
     const blk = t
       ? `<div class="blk${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${fg}"><div class="tag">${iconSvg(t.icon)}<span class="s">${t.short}</span></div>${memoHtml}</div>`
@@ -448,16 +448,16 @@ async function renderImage() {
       ctx.fillText(TYPES[i.shift].short, tx + TS + 4, by + 23);
       top = by + 42;
     }
-    // 메모 영역: 한 줄에 6글자 크기
-    const MS = Math.floor((bw - 8) / 6);
-    const lh = Math.round(MS * 1.2);
+    // 공휴일·메모 영역: 한 줄에 5글자 크기, 공휴일 먼저 그 아래 메모
+    const MS = Math.floor((bw - 8) / 5);
+    const lh = Math.round(MS * 1.25);
     const maxLines = Math.max(0, Math.floor((by + bh - 4 - top) / lh));
     const lines = [];
-    if (i.hol) lines.push({ t: i.hol, hol: true });
-    if (i.memo) wrapText(ctx, i.memo, bw - 8, `500 ${MS}px ${FONT}`).forEach(t => lines.push({ t }));
+    if (i.hol) wrapText(ctx, i.hol, bw - 8, `600 ${MS}px ${FONT}`).forEach(t => lines.push({ t, hol: true }));
+    if (i.memo) wrapText(ctx, i.memo, bw - 8, `600 ${MS}px ${FONT}`).forEach(t => lines.push({ t }));
     ctx.textAlign = 'left';
     lines.slice(0, maxLines).forEach((ln, k) => {
-      ctx.font = `${ln.hol ? 700 : 500} ${MS}px ${FONT}`;
+      ctx.font = `600 ${MS}px ${FONT}`;
       ctx.fillStyle = ln.hol && !i.shift ? C.red : fg;
       let t = ln.t;
       if (k === maxLines - 1 && lines.length > maxLines) t = fitText(ctx, t + '…', bw - 8);

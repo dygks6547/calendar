@@ -46,8 +46,7 @@ function normalize(s) {
   const p = s.pattern || {};
   const seq = Array.isArray(p.sequence) ? p.sequence.filter(k => PATTERN_KEYS.includes(k)) : d.pattern.sequence;
   // v1 → v2: 다크 모드를 기본값으로
-  let theme = ['system', 'light', 'dark'].includes(s.theme) ? s.theme : 'dark';
-  if ((s.v || 1) < 2 && theme === 'system') theme = 'dark';
+  const theme = s.theme === 'light' ? 'light' : 'dark'; // 라이트·다크 두 가지 (그 외는 다크)
   return {
     v: 2,
     pattern: {
@@ -339,6 +338,9 @@ function renderSettings() {
   const p = state.pattern;
   $('patSummary').textContent = p.sequence.length ? `${p.sequence.map(k => TYPES[k].short).join('-')} · ${p.startDate.replace(/-/g, '.')} 시작` : '순환 패턴 설정';
   document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('sel', b.dataset.themeVal === state.theme));
+  $('colorSummary').innerHTML = PICK_KEYS.map(k => `<i style="background:${state.colors[k]}" title="${TYPES[k].label}"></i>`).join('');
+}
+function renderColors() {
   $('colorList').innerHTML = PICK_KEYS.map(k => {
     const c = state.colors[k];
     return `<label class="color-row"><span class="sw" style="background:${c};color:${textOn(c)}">${TYPES[k].short}</span>
@@ -357,12 +359,17 @@ $('colorList').addEventListener('input', e => {
   sw.style.background = e.target.value; sw.style.color = textOn(e.target.value);
   save(); render();
 });
-$('colorReset').addEventListener('click', () => { state.colors = { ...DEFAULT_COLORS }; save(); render(); renderSettings(); });
 $('wipeBtn').addEventListener('click', () => {
-  if (!confirm('패턴, 예외 근무, 메모, 색상을 모두 초기화할까요?')) return;
-  state = defaultState(); save(); applyTheme(); render(); renderSettings();
+  if (!confirm('패턴, 날짜별 변경, 메모, 색상을 모두 지울까요? 되돌릴 수 없습니다.')) return;
+  const theme = state.theme;
+  state = defaultState(); state.theme = theme; save(); applyTheme(); render();
+  $('resetSheet').hidden = true;
   toast('초기화했습니다');
 });
+// 설정 안의 하위 화면
+$('openColors').addEventListener('click', () => { $('setSheet').hidden = true; renderColors(); openSheet('colorSheet'); });
+$('openReset').addEventListener('click', () => { $('setSheet').hidden = true; openSheet('resetSheet'); });
+document.querySelectorAll('[data-back]').forEach(b => b.addEventListener('click', () => { closeSheet(b); openSettings(); }));
 
 /* ───────── 이미지 저장 (Canvas 직접 그리기) ───────── */
 function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }

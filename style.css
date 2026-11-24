@@ -187,6 +187,11 @@ textarea, .text {
 .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .seg button { height: 48px; border-radius: 12px; border: 2px solid var(--line); background: transparent; font-weight: 700; font-size: 16px; }
 .seg button.sel { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.seg.two { grid-template-columns: repeat(2, 1fr); }
+.swatches { display: flex; gap: 6px; align-items: center; }
+.swatches i { width: 22px; height: 22px; border-radius: 6px; display: block; }
+.sheet-head .back { font-size: 34px; margin-left: -10px; }
+.sheet-head h2 { flex: 1; }
 
 .color-row { display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid var(--line); }
 .color-row .sw { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 19px; font-weight: 700; }

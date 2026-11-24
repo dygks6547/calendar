@@ -13,7 +13,7 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 <header class="top">
@@ -95,23 +95,49 @@
     </div>
     <div class="field">근무 패턴</div>
     <button class="wide ghost rowbtn" id="openPattern"><svg viewBox="0 0 24 24"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/></svg><span id="patSummary">순환 패턴 설정</span><span class="chev">›</span></button>
+    <div class="field">색상 설정</div>
+    <button class="wide ghost rowbtn" id="openColors"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.3-.3-.4-.5-.8-.5-1.3 0-1.1.9-2 2-2h2.4A5.6 5.6 0 0 0 22 9.8C22 5.5 17.5 2 12 2zM6.5 12.5a1.5 1.5 0 1 0 0-3a1.5 1.5 0 1 0 0 3zM9.5 8a1.5 1.5 0 1 0 0-3a1.5 1.5 0 1 0 0 3zM14.5 8a1.5 1.5 0 1 0 0-3a1.5 1.5 0 1 0 0 3zM17.5 12.5a1.5 1.5 0 1 0 0-3a1.5 1.5 0 1 0 0 3z"/></svg><span class="swatches" id="colorSummary"></span><span class="chev">›</span></button>
     <div class="field">화면 모드</div>
-    <div class="seg" id="themeSeg">
-      <button data-theme-val="system">시스템</button>
+    <div class="seg two" id="themeSeg">
       <button data-theme-val="light">라이트</button>
       <button data-theme-val="dark">다크</button>
     </div>
-    <div class="field">근무 색상</div>
+    <div class="field">초기화</div>
+    <button class="wide ghost rowbtn" id="openReset"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg><span>데이터 초기화</span><span class="chev">›</span></button>
+  </div>
+</div>
+
+<!-- 색상 설정 -->
+<div class="sheet-wrap" id="colorSheet" hidden>
+  <div class="backdrop" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="colorTitle">
+    <div class="sheet-head">
+      <button class="iconbtn back" data-back aria-label="설정으로 돌아가기">‹</button>
+      <h2 id="colorTitle">색상 설정</h2>
+      <button class="iconbtn" data-close aria-label="닫기">✕</button>
+    </div>
+    <p class="sub">근무별 색을 고르세요. 주말·공휴일 일근은 비번 색으로 표시됩니다.</p>
     <div id="colorList"></div>
-    <button class="wide ghost" id="colorReset">기본 색상으로 되돌리기</button>
-    <div class="field">데이터</div>
+  </div>
+</div>
+
+<!-- 초기화 -->
+<div class="sheet-wrap" id="resetSheet" hidden>
+  <div class="backdrop" data-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+    <div class="sheet-head">
+      <button class="iconbtn back" data-back aria-label="설정으로 돌아가기">‹</button>
+      <h2 id="resetTitle">초기화</h2>
+      <button class="iconbtn" data-close aria-label="닫기">✕</button>
+    </div>
+    <p class="sub">근무 패턴, 날짜별 변경·연차, 메모, 색상이 모두 처음 상태로 돌아갑니다. 되돌릴 수 없습니다.</p>
     <button class="wide danger" id="wipeBtn">모든 데이터 초기화</button>
   </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="holidays.js?v=11"></script>
-<script src="app.js?v=11"></script>
+<script src="holidays.js?v=12"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

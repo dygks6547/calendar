@@ -1,5 +1,5 @@
-const CACHE = 'shiftcal-v11';
-const V = '?v=11';
+const CACHE = 'shiftcal-v12';
+const V = '?v=12';
 const ASSETS = [
   './', 'index.html', 'style.css' + V, 'app.js' + V, 'holidays.js' + V, 'manifest.json',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',

@@ -163,11 +163,13 @@ function render() {
     const fg = textOn(i.color);
     const t = i.shift ? TYPES[i.shift] : null;
     const label = `${parts(c.s)[1]}월 ${c.d}일 ${DOW[i.dow]}요일${i.hol ? ' ' + i.hol : ''} ${t ? (i.restW ? '일근 휴무' : t.label) : '근무 없음'}${i.memo ? ' 메모 있음' : ''}`;
+    const memo = (i.hol ? `<span class="hol">${esc(i.hol)}</span>` : '') + (i.memo ? esc(i.memo) : '');
+    const memoHtml = memo ? `<div class="memo">${memo}</div>` : '';
     const blk = t
-      ? `<div class="blk${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${fg}">${iconSvg(t.icon)}<span class="s">${t.short}</span>${i.hol ? `<span class="hol">${esc(i.hol)}</span>` : ''}</div>`
-      : `<div class="blk">${i.hol ? `<span class="hol" style="color:var(--red)">${esc(i.hol)}</span>` : ''}</div>`;
+      ? `<div class="blk${i.overridden ? ' ov' : ''}" style="background:${i.color};color:${fg}"><div class="tag">${iconSvg(t.icon)}<span class="s">${t.short}</span></div>${memoHtml}</div>`
+      : `<div class="blk empty">${memoHtml}</div>`;
     return `<button class="${cls}" data-date="${c.s}" aria-label="${esc(label)}">
-      <div class="num"><span class="n">${c.d}</span>${i.memo ? '<span class="dot"></span>' : ''}</div>${blk}</button>`;
+      <div class="num"><span class="n">${c.d}</span></div>${blk}</button>`;
   }).join('');
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
@@ -430,24 +432,56 @@ async function renderImage() {
     ctx.fillStyle = isToday ? C.bg : (i.red ? C.red : C.fg);
     ctx.font = `600 28px ${FONT}`; ctx.textAlign = 'center';
     ctx.fillText(String(c.d), cx + 31, cy + 24);
-    if (i.memo) { ctx.fillStyle = C.fg; ctx.beginPath(); ctx.arc(cx + colW - 16, cy + 23, 6, 0, Math.PI * 2); ctx.fill(); }
     // 근무 블록
     const bx = cx + 6, by = cy + 46, bw = colW - 12, bh = cellH - 52;
+    const fg = i.shift ? textOn(i.color) : C.fg;
+    let top = by + 6;
     if (i.shift) {
-      const fg = textOn(i.color);
       ctx.fillStyle = i.color; roundRect(ctx, bx, by, bw, bh, 12); ctx.fill();
-      drawIcon(ctx, TYPES[i.shift].icon, bx + bw / 2, by + 30, 24, fg);
-      ctx.fillStyle = fg; ctx.font = `700 50px ${FONT}`;
-      ctx.fillText(TYPES[i.shift].short, bx + bw / 2, by + (i.hol ? 76 : 82));
-      if (i.hol) { ctx.font = `600 18px ${FONT}`; ctx.fillText(fitText(ctx, i.hol, bw - 8), bx + bw / 2, by + bh - 16); }
-    } else if (i.hol) {
-      ctx.fillStyle = C.red; ctx.font = `600 18px ${FONT}`;
-      ctx.fillText(fitText(ctx, i.hol, bw - 8), bx + bw / 2, by + bh - 16);
+      // 상단: 아이콘 + 약자 (같은 크기)
+      const TS = 26;
+      ctx.font = `700 ${TS}px ${FONT}`;
+      const tw = TS + 4 + ctx.measureText(TYPES[i.shift].short).width;
+      const tx = bx + (bw - tw) / 2;
+      drawIcon(ctx, TYPES[i.shift].icon, tx + TS / 2, by + 22, TS - 2, fg);
+      ctx.fillStyle = fg; ctx.textAlign = 'left';
+      ctx.fillText(TYPES[i.shift].short, tx + TS + 4, by + 23);
+      top = by + 42;
     }
+    // 메모 영역: 한 줄에 6글자 크기
+    const MS = Math.floor((bw - 8) / 6);
+    const lh = Math.round(MS * 1.2);
+    const maxLines = Math.max(0, Math.floor((by + bh - 4 - top) / lh));
+    const lines = [];
+    if (i.hol) lines.push({ t: i.hol, hol: true });
+    if (i.memo) wrapText(ctx, i.memo, bw - 8, `500 ${MS}px ${FONT}`).forEach(t => lines.push({ t }));
+    ctx.textAlign = 'left';
+    lines.slice(0, maxLines).forEach((ln, k) => {
+      ctx.font = `${ln.hol ? 700 : 500} ${MS}px ${FONT}`;
+      ctx.fillStyle = ln.hol && !i.shift ? C.red : fg;
+      let t = ln.t;
+      if (k === maxLines - 1 && lines.length > maxLines) t = fitText(ctx, t + '…', bw - 8);
+      else t = fitText(ctx, t, bw - 8);
+      ctx.fillText(t, bx + 4, top + k * lh + lh / 2);
+    });
+    ctx.textAlign = 'center';
     if (isToday) { ctx.strokeStyle = C.today; ctx.lineWidth = 5; roundRect(ctx, cx + 2.5, cy + 2.5, colW - 5, cellH - 5, 15); ctx.stroke(); }
     ctx.globalAlpha = 1;
   });
   return new Promise(res => cv.toBlob(res, 'image/png'));
+}
+function wrapText(ctx, text, max, font) {
+  ctx.font = font;
+  const out = [];
+  String(text).split('\n').forEach(para => {
+    let line = '';
+    for (const ch of para) {
+      if (line && ctx.measureText(line + ch).width > max) { out.push(line); line = ch.trim() ? ch : ''; }
+      else line += ch;
+    }
+    out.push(line);
+  });
+  return out;
 }
 function fitText(ctx, t, max) {
   if (ctx.measureText(t).width <= max) return t;
